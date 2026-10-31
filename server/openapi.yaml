@@ -1,0 +1,217 @@
+openapi: 3.0.3
+info:
+  title: AI MoM Generator API
+  version: 1.0.0
+  description: Backend API for AI Minutes of Meeting generation service
+servers:
+  - url: http://localhost:3000
+    description: Local Development Server
+  - url: https://api-staging.yourdomain.com
+    description: Cloud Staging Server
+
+paths:
+  /api/health:
+    get:
+      summary: Health check endpoint
+      description: Returns the operational status and active LLM configuration of the API.
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  service:
+                    type: string
+                    example: AI MoM Generator API
+                  provider:
+                    type: string
+                    example: gemini
+                  model:
+                    type: string
+                    example: gemini-2.5-flash
+                  uploadMaxMb:
+                    type: number
+                    example: 25
+
+  /api/generations:
+    post:
+      summary: Upload transcript and trigger MoM generation job
+      description: Accepts a multipart file upload (.txt, .docx, .pdf) and returns an asynchronous job ID.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - transcript
+              properties:
+                transcript:
+                  type: string
+                  format: binary
+                  description: Meeting transcript file (.txt, .docx, or .pdf)
+      responses:
+        '202':
+          description: Generation job accepted and processing started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobAcceptedResponse'
+        '400':
+          description: Invalid file or missing payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/generations/{id}:
+    get:
+      summary: Get generation job status
+      description: Polls the current status, progress chunks, and metadata of a generation job.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: UUID or ID of the generation job
+      responses:
+        '200':
+          description: Current job status details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+        '404':
+          description: Job not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Cancel or delete a generation job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: UUID or ID of the generation job
+      responses:
+        '200':
+          description: Job successfully deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+        '404':
+          description: Job not found
+
+  /api/generations/{id}/download:
+    get:
+      summary: Download the generated MoM DOCX file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Generation job ID
+      responses:
+        '200':
+          description: Generated Word Document (.docx)
+          content:
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Job is not yet completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: File not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    JobAcceptedResponse:
+      type: object
+      required:
+        - id
+        - status
+        - stage
+        - message
+      properties:
+        id:
+          type: string
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        status:
+          type: string
+          enum: [idle, uploading, processing, completed, failed]
+          example: processing
+        stage:
+          type: string
+          enum: [uploading, extracting, chunking, consolidating, docx, completed]
+          example: extracting
+        message:
+          type: string
+          example: File uploaded. Starting text extraction...
+
+    JobStatusResponse:
+      type: object
+      required:
+        - id
+        - status
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [idle, uploading, processing, completed, failed]
+        stage:
+          type: string
+        message:
+          type: string
+        originalFileName:
+          type: string
+        resultFileName:
+          type: string
+        totalChunks:
+          type: integer
+        completedChunks:
+          type: integer
+        agendaCount:
+          type: integer
+        meetingTitle:
+          type: string
+          nullable: true
+        meetingDate:
+          type: string
+          nullable: true
+        error:
+          type: string
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: Generation job not found or expired.

@@ -1,0 +1,19 @@
+node_modules/
+dist/
+build/
+tmp/
+*.tmp
+.env
+.DS_Store
+Thumbs.db
+*.log
+coverage/
+
+# QA & Test Artifacts
+test-results/
+playwright-report/
+blob-report/
+.promptfoo/
+promptfoo-results.json
+schemathesis-report.xml
+qa-triage-report.md

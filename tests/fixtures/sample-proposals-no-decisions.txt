@@ -1,0 +1,9 @@
+Meeting Title: Office Relocation Brainstorming
+Date: November 05, 2026
+
+Alice [10:00]: Today we are discussing potential office relocation options. This is purely exploratory.
+Bob [10:02]: I suggest we look at the Midtown building because rent might be cheaper.
+Charlie [10:04]: Midtown has poor subway connectivity. Maybe Downtown is better?
+Alice [10:06]: Let's not make any decisions today. We need more data from commercial brokers first.
+Bob [10:07]: Agreed, no decision made today. We will revisit next quarter.
+Alice [10:08]: Meeting closed.

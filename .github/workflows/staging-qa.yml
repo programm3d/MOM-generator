@@ -1,0 +1,100 @@
+name: Staging Agentic QA Suite
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+    inputs:
+      staging_web_url:
+        description: 'Override Staging Web URL (optional)'
+        required: false
+      staging_api_url:
+        description: 'Override Staging API URL (optional)'
+        required: false
+
+jobs:
+  staging-qa:
+    name: Run Staging Quality Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    env:
+      STAGING_WEB_URL: ${{ inputs.staging_web_url || secrets.STAGING_WEB_URL || 'https://staging.example.com' }}
+      STAGING_API_URL: ${{ inputs.staging_api_url || secrets.STAGING_API_URL || 'https://api-staging.example.com' }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Setup Python Runtime (for Schemathesis)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Project Dependencies
+        run: |
+          npm install --include=dev
+
+      # 1. Staging Health Verification
+      - name: Verify Staging API Availability
+        run: |
+          echo "Checking staging API health at $STAGING_API_URL..."
+          curl --fail --retry 5 --retry-delay 5 --retry-connrefused "$STAGING_API_URL/api/health" || echo "Staging API health check timed out or unreachable (continuing with remaining gates)."
+        continue-on-error: true
+
+      # 2. Schemathesis Backend Fuzzing
+      - name: Run Schemathesis Backend Fuzzing
+        run: |
+          pip install schemathesis
+          schemathesis run ./server/openapi.yaml \
+            --url "$STAGING_API_URL" \
+            --checks all \
+            --junit-xml schemathesis-report.xml || true
+        continue-on-error: true
+
+      # 3. Promptfoo LLM Prompt Evaluation
+      - name: Run Promptfoo LLM Evaluations
+        run: |
+          npx promptfoo eval -c promptfooconfig.yaml --output promptfoo-results.json || true
+        continue-on-error: true
+
+      # 4. Playwright Staging UI E2E
+      - name: Install Playwright Browsers
+        run: |
+          npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E Tests
+        run: |
+          npx playwright test
+        env:
+          BASE_URL: ${{ env.STAGING_WEB_URL }}
+        continue-on-error: true
+
+      # 5. Agentic AI Triage & Summary Generation
+      - name: Run Agentic Triage
+        if: always()
+        run: |
+          node scripts/agentic-triage.mjs
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      # 6. Upload QA Artifacts
+      - name: Upload Test Reports & Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-qa-artifacts
+          path: |
+            playwright-report/
+            test-results/
+            schemathesis-report.xml
+            promptfoo-results.json
+            qa-triage-report.md
