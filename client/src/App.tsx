@@ -7,6 +7,8 @@ import { uploadTranscript, getGenerationStatus } from './services/api';
 import { GenerationStatusResponse, JobStage, JobStatus } from './types';
 import { FileSpreadsheet } from 'lucide-react';
 
+// Define the App component 
+
 export const App: React.FC = () => {
   const [jobId, setJobId] = useState<string | null>(null);
   const [status, setStatus] = useState<JobStatus>('idle');
@@ -145,7 +147,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {(status === 'uploading' || status === 'processing' || (status === 'failed' && jobId)) && (
+        {(status === 'uploading' || status === 'processing' || status === 'failed') && (
           <ProcessingStatus
             status={status}
             stage={stage}

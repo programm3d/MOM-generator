@@ -54,7 +54,7 @@ export const ProcessingStatus: React.FC<ProcessingStatusProps> = ({
   const isFailed = status === 'failed';
 
   return (
-    <div className="processing-card">
+    <div className="processing-container processing-card">
       <div className="processing-header">
         <div className="header-status-badge">
           {isFailed ? (
