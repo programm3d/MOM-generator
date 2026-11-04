@@ -16,7 +16,7 @@
     "test:prompts": "promptfoo eval -c promptfooconfig.yaml",
     "test:prompts:report": "promptfoo eval -c promptfooconfig.yaml --output promptfoo-results.json --output promptfoo-report.html",
     "test:api": "schemathesis run ./server/openapi.yaml --checks all",
-    "test:api:report": "schemathesis run ./server/openapi.yaml --checks all --junit-xml schemathesis-report.xml",
+    "test:api:report": "schemathesis run ./server/openapi.yaml --checks all --report-junit-path schemathesis-report.xml",
     "test:triage": "node scripts/agentic-triage.mjs"
   },
   "devDependencies": {
