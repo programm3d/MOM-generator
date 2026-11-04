@@ -5,10 +5,6 @@ on:
     branches:
       - 'core/staging'
       - staging
-  pull_request:
-    branches:
-      - 'core/staging'
-    types: [closed]
   workflow_dispatch:
     inputs:
       staging_web_url:
@@ -21,7 +17,6 @@ on:
 jobs:
   staging-qa:
     name: Run Staging Quality Gates
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
