@@ -73,6 +73,9 @@ export class GenerationController {
       agendaCount: job.agendaCount,
       meetingTitle: job.meetingTitle,
       meetingDate: job.meetingDate,
+      meetingTime: job.meetingTime,
+      meetingMode: job.meetingMode,
+      attendees: job.attendees,
       error: job.error,
     });
   }

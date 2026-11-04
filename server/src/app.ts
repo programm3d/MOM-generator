@@ -7,7 +7,7 @@ import { config } from './config/index.js';
 export const app = express();
 
 app.use(cors({
-  origin: [config.clientOrigin, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: true,
   credentials: true,
 }));
 

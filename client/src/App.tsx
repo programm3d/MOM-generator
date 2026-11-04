@@ -145,7 +145,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {(status === 'uploading' || status === 'processing' || (status === 'failed' && jobId)) && (
+        {(status === 'uploading' || status === 'processing' || status === 'failed') && (
           <ProcessingStatus
             status={status}
             stage={stage}

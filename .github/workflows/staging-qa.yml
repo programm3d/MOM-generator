@@ -3,7 +3,12 @@ name: Staging Agentic QA Suite
 on:
   push:
     branches:
+      - 'core/staging'
       - staging
+  pull_request:
+    branches:
+      - 'core/staging'
+    types: [closed]
   workflow_dispatch:
     inputs:
       staging_web_url:
@@ -16,6 +21,7 @@ on:
 jobs:
   staging-qa:
     name: Run Staging Quality Gates
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -50,7 +56,7 @@ jobs:
           curl --fail --retry 5 --retry-delay 5 --retry-connrefused "$STAGING_API_URL/api/health" || echo "Staging API health check timed out or unreachable (continuing with remaining gates)."
         continue-on-error: true
 
-      # 2. Schemathesis Backend Fuzzing
+      # 2. Schemathesis Backend Fuzzing (Contract & 5xx error tests)
       - name: Run Schemathesis Backend Fuzzing
         run: |
           pip install schemathesis
@@ -60,13 +66,13 @@ jobs:
             --junit-xml schemathesis-report.xml || true
         continue-on-error: true
 
-      # 3. Promptfoo LLM Prompt Evaluation
+      # 3. Promptfoo LLM Prompt Evaluation (Prompt regression & safety tests)
       - name: Run Promptfoo LLM Evaluations
         run: |
-          npx promptfoo eval -c promptfooconfig.yaml --output promptfoo-results.json || true
+          npx promptfoo eval -c promptfooconfig.yaml --output promptfoo-results.json --output promptfoo-report.html || true
         continue-on-error: true
 
-      # 4. Playwright Staging UI E2E
+      # 4. Playwright Staging UI E2E (Critical user journeys)
       - name: Install Playwright Browsers
         run: |
           npx playwright install --with-deps chromium
@@ -86,15 +92,39 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
-      # 6. Upload QA Artifacts
-      - name: Upload Test Reports & Artifacts
+      # 6. Separate Test Report Artifact Generation & Uploads
+      - name: Upload Schemathesis Test Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: staging-qa-artifacts
+          name: schemathesis-report
+          path: schemathesis-report.xml
+          if-no-files-found: ignore
+
+      - name: Upload Promptfoo Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: promptfoo-report
+          path: |
+            promptfoo-results.json
+            promptfoo-report.html
+          if-no-files-found: ignore
+
+      - name: Upload Playwright Test Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
           path: |
             playwright-report/
             test-results/
-            schemathesis-report.xml
-            promptfoo-results.json
-            qa-triage-report.md
+          if-no-files-found: ignore
+
+      - name: Upload AI Triage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-triage-report
+          path: qa-triage-report.md
+          if-no-files-found: ignore

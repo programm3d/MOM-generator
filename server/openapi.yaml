@@ -203,6 +203,15 @@ components:
         meetingDate:
           type: string
           nullable: true
+        meetingTime:
+          type: string
+          nullable: true
+        meetingMode:
+          type: string
+          nullable: true
+        attendees:
+          type: string
+          nullable: true
         error:
           type: string
           nullable: true

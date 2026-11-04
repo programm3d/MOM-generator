@@ -86,7 +86,7 @@ To prevent ballooning CI runtimes and token costs, divide test execution into th
 | Tier | Trigger | Suite Scope | Target Environment | Target Runtime |
 | :--- | :--- | :--- | :--- | :--- |
 | **Tier 1: PR Smoke Gate** | Pull Request to `main`/`staging` | • Unit & component tests<br>• Promptfoo with mock/cache<br>• Playwright smoke test (1 headless browser) | Ephemeral PR Preview / Local Docker | < 3 minutes |
-| **Tier 2: Staging Gate** | Merge into `staging` branch | • Schemathesis API fuzzing (100 checks)<br>• Promptfoo matrix against staging LLM<br>• Full Playwright E2E suite<br>• **Autonomous AI Triage** | Live Deployed Staging Cluster | 5–10 minutes |
+| **Tier 2: Staging Gate** | Merge into `core/staging` (or `staging`) branch | • Schemathesis API fuzzing (100 checks)<br>• Promptfoo matrix against staging LLM<br>• Full Playwright E2E suite<br>• Separate report artifacts (Schemathesis, Promptfoo, Playwright)<br>• **Autonomous AI Triage** | Live Deployed Staging Cluster | 5–10 minutes |
 | **Tier 3: Nightly Deep Audit** | Scheduled Cron (Midnight) | • Schemathesis exhaustive fuzzing (10,000+ checks)<br>• Full LLM Red-Teaming (200+ jailbreak probes)<br>• Cross-browser Playwright (Chromium, Firefox, WebKit) | Staging / Pre-Production | 20–45 minutes |
 
 ---
