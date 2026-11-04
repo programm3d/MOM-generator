@@ -5,10 +5,6 @@ on:
     branches:
       - 'core/staging'
       - staging
-  pull_request:
-    branches:
-      - 'core/staging'
-    types: [closed]
   workflow_dispatch:
     inputs:
       staging_web_url:
@@ -21,7 +17,6 @@ on:
 jobs:
   staging-qa:
     name: Run Staging Quality Gates
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -29,6 +24,7 @@ jobs:
       STAGING_WEB_URL: ${{ inputs.staging_web_url || secrets.STAGING_WEB_URL || 'https://staging.example.com' }}
       STAGING_API_URL: ${{ inputs.staging_api_url || secrets.STAGING_API_URL || 'https://api-staging.example.com' }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
     steps:
       - name: Checkout Codebase
@@ -37,7 +33,7 @@ jobs:
       - name: Setup Node.js Runtime
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Setup Python Runtime (for Schemathesis)
@@ -63,7 +59,7 @@ jobs:
           schemathesis run ./server/openapi.yaml \
             --url "$STAGING_API_URL" \
             --checks all \
-            --junit-xml schemathesis-report.xml || true
+            --report-junit-path schemathesis-report.xml || true
         continue-on-error: true
 
       # 3. Promptfoo LLM Prompt Evaluation (Prompt regression & safety tests)
