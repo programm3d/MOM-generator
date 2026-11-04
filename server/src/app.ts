@@ -14,6 +14,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// RFC 9110 Allow header for compliance with HTTP method checking
+app.use((_req, res, next) => {
+  res.setHeader('Allow', 'GET, POST, DELETE, OPTIONS, HEAD');
+  next();
+});
+
 // Register API routes
 app.use('/api', routes);
 
